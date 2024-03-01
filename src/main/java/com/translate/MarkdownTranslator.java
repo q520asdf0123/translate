@@ -1,4 +1,4 @@
-package com.translate;
+package com.hero.log.action;
 
 import com.alibaba.dashscope.aigc.generation.Generation;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
@@ -11,89 +11,65 @@ import com.alibaba.dashscope.exception.NoApiKeyException;
 import org.springframework.util.StringUtils;
 
 import java.io.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.regex.*;
 
 public class MarkdownTranslator {
 
-    private static final Pattern URL_PATTERN = Pattern.compile("\\[([^]]+)\\]\\((http[^)]+)\\)");
-    private static final String TRANSLATION_PREFIX = "翻译内容: ";
-
+    private static final Pattern NON_TEXT_PATTERN = Pattern.compile("(^\\[|^\\!\\[|\\]\\(.*?\\)$|^#+\\s+.*)");
 
     public static void main(String[] args) {
-        String inputFilePath = "D:\\make.md";
-        String outputFilePath = "D:\\output.md";
+        String inputFilePath = "D:\\project\\m1.md"; // 替换成您的Markdown文件路径
+        String outputFilePath = "D:\\project\\translated_markdown.md"; // 替换成输出文件的路径
+        translateMarkdownFile(inputFilePath, outputFilePath);
+    }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFilePath));
-             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath))) {
-
-            CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
+    private static void translateMarkdownFile(String inputPath, String outputPath) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputPath));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath))) {
             String line;
-            StringBuilder paragraph = new StringBuilder();
+            List<String> segmentLines = new ArrayList<>();
 
             while ((line = reader.readLine()) != null) {
-                if (!line.trim().isEmpty() ) {
-                    // Accumulate paragraph text, skipping URLs
-                    paragraph.append(line).append("\n");
-                } else {
-                    if (paragraph.length() > 0) {
-                        // Paragraph ends here. Process the accumulated paragraph text.
-                        String paragraphText = paragraph.toString();
-                        future = future.thenCompose(v -> translateAndWrite(paragraphText, writer));
-                        paragraph.setLength(0); // Reset the StringBuilder for the next paragraph
+                if (NON_TEXT_PATTERN.matcher(line).matches()) {
+                    // If the line is a non-text element, translate and write the accumulated segment first
+                    if (!segmentLines.isEmpty()) {
+                        String segment = String.join(System.lineSeparator(), segmentLines);
+                        writer.write(segment);
+                        writer.newLine();
+                        writer.write(translate(segment)); // Translate the segment
+                        writer.newLine();
+                        segmentLines.clear(); // Clear the accumulated lines
                     }
-                    // Write the original line (empty line or line with URL) to maintain the structure
-                    writer.write(line);
+                    writer.write(line); // Write the non-text line
                     writer.newLine();
+                } else {
+                    segmentLines.add(line); // Accumulate lines for text segments
                 }
             }
-
-            // If there is any remaining paragraph text not followed by an empty line, process it.
-            if (paragraph.length() > 0) {
-                future = future.thenCompose(v -> translateAndWrite(paragraph.toString(), writer));
+            // Don't forget to process the last segment
+            if (!segmentLines.isEmpty()) {
+                String segment = String.join(System.lineSeparator(), segmentLines);
+                writer.write(segment);
+                writer.newLine();
+                writer.write(translate(segment)); // Translate the segment
+                writer.newLine();
             }
-
-            // Wait for all futures to complete
-            future.get();
-        } catch (IOException | InterruptedException | ExecutionException e) {
+        } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Error processing the Markdown file.");
+        } catch (NoApiKeyException e) {
+            throw new RuntimeException(e);
+        } catch (InputRequiredException e) {
+            throw new RuntimeException(e);
         }
     }
 
 
-    private static CompletableFuture<Void> translateAndWrite(String markdownLine, BufferedWriter writer) {
-        return CompletableFuture.supplyAsync(() -> {
-                    try {
-                        return translateWithOpenAI(markdownLine);
-                    } catch (NoApiKeyException | InputRequiredException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .thenAccept(translation -> {
-                    try {
-                        writer.write(markdownLine);
-                        writer.newLine();
-                        // Write the translation using Markdown quote syntax if it's not an empty line
-                        if (!markdownLine.trim().isEmpty()) {
-                            // 使用Markdown的引用语法来展示翻译内容
-                            writer.write("> " + translation);
-                            writer.newLine();
-                        }
-                        writer.newLine(); // Add an extra line to separate from the next content
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-    }
-
-    // 使用OpenAI API进行翻译的示例方法（需要实现）
-    private static String translateWithOpenAI(String text) throws NoApiKeyException, InputRequiredException {
+    private static String translate(String text) throws NoApiKeyException, InputRequiredException {
         // 这里应该是调用OpenAI API进行翻译的代码
         // 由于实际的API调用依赖于具体的API接口和认证，这里不提供具体实现
         // 返回翻译后的文本作为示例
-        if(!StringUtils.hasText(text)){
+        if (!StringUtils.hasText(text)) {
             return "";
         }
 
@@ -104,11 +80,11 @@ public class MarkdownTranslator {
         Message userMsg = Message.builder().role(Role.USER.getValue()).content(text).build();
         msgManager.add(systemMsg);
         msgManager.add(userMsg);
-        QwenParam param = QwenParam.builder().model("qwen-plus").messages(msgManager.get())
+        QwenParam param = QwenParam.builder().model("qwen-max").messages(msgManager.get())
                 .apiKey("sk-ac7ea97ecadb4f6f9830a6b43cfeeb8a").resultFormat(QwenParam.ResultFormat.MESSAGE).build();
         GenerationResult result = gen.call(param);
         String content = result.getOutput().getChoices().get(0).getMessage().getContent();
         System.out.println(content);
-        return  content;
+        return "Translated: " + content;
     }
 }
