@@ -45,29 +45,29 @@ public class Markdown {
     public static void main(String[] args) {
         String inputFilePath = "D:\\make.md";
         String outputFilePath = "D:\\translated_make.md";
+    }
 
+    public String start(String text){
         try {
-            String markdown = new String(Files.readAllBytes(Paths.get(inputFilePath)));
+            Markdown markdown = new Markdown();
 
             MutableDataSet options = new MutableDataSet();
             options.set(Parser.EXTENSIONS, Arrays.asList(TocExtension.create(), TablesExtension.create()));
 
             Parser parser = Parser.builder(options).build();
-            Document document = parser.parse(markdown);
+            Document document = parser.parse(text);
 
             StringBuilder newMarkdown = new StringBuilder();
             List<String> urls = new ArrayList<>();
 
             for (Node node : document.getChildren()) {
-                processNode(node, newMarkdown, urls);
+                markdown.processNode(node, newMarkdown, urls);
             }
 
             // 将新生成的Markdown内容写入到输出文件
-            Files.write(Paths.get(outputFilePath), newMarkdown.toString().getBytes(), StandardOpenOption.CREATE);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoApiKeyException e) {
+//            Files.write(Paths.get(outputFilePath), newMarkdown.toString().getBytes(), StandardOpenOption.CREATE);
+            return newMarkdown.toString();
+        }  catch (NoApiKeyException e) {
             throw new RuntimeException(e);
         } catch (InputRequiredException e) {
             throw new RuntimeException(e);
@@ -75,7 +75,7 @@ public class Markdown {
     }
 
 
-    private static void processNode(Node node, StringBuilder newMarkdown, List<String> urls) throws NoApiKeyException, InputRequiredException {
+    private  void processNode(Node node, StringBuilder newMarkdown, List<String> urls) throws NoApiKeyException, InputRequiredException {
         BasedSequence chars = node.getChars();
         String originalText = chars.toString();
 
@@ -96,7 +96,7 @@ public class Markdown {
         }
     }
 
-    private static String replaceUrlsWithPlaceholders(String text, List<String> urls) {
+    private  String replaceUrlsWithPlaceholders(String text, List<String> urls) {
         Matcher matcher = URL_PATTERN.matcher(text);
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
@@ -108,7 +108,7 @@ public class Markdown {
         return sb.toString();
     }
 
-    private static String restorePlaceholdersWithUrls(String text, List<String> urls) {
+    private  String restorePlaceholdersWithUrls(String text, List<String> urls) {
         String result = text;
         for (int i = 0; i < urls.size(); i++) {
             result = result.replace(String.format(PLACEHOLDER, i), urls.get(i));
@@ -116,7 +116,7 @@ public class Markdown {
         return result;
     }
 
-    private static String translate(String text) throws NoApiKeyException, InputRequiredException {
+    private  String translate(String text) throws NoApiKeyException, InputRequiredException {
         // 这里应该是调用OpenAI API进行翻译的代码
         // 由于实际的API调用依赖于具体的API接口和认证，这里不提供具体实现
         // 返回翻译后的文本作为示例
@@ -124,19 +124,20 @@ public class Markdown {
             return "";
         }
 
-//        Generation gen = new Generation();
-//        MessageManager msgManager = new MessageManager(10);
-//        Message systemMsg =
-//                Message.builder().role(Role.SYSTEM.getValue()).content("翻译下面语言为中文,输入什么格式，就输出什么格式，然后跳过网址,").build();
-//        Message userMsg = Message.builder().role(Role.USER.getValue()).content(text).build();
-//        msgManager.add(systemMsg);
-//        msgManager.add(userMsg);
-//        QwenParam param = QwenParam.builder().model("qwen-max").messages(msgManager.get())
-//                .apiKey("sk-ac7ea97ecadb4f6f9830a6b43cfeeb8a").resultFormat(QwenParam.ResultFormat.MESSAGE).build();
-//        GenerationResult result = gen.call(param);
-//        String content = result.getOutput().getChoices().get(0).getMessage().getContent();
-//        System.out.println(content);
-        return  "翻译==========>"+text;
+        Generation gen = new Generation();
+        MessageManager msgManager = new MessageManager(10);
+        Message systemMsg =
+                Message.builder().role(Role.SYSTEM.getValue()).content("翻译下面语言为中文,输入什么格式，就输出什么格式，然后跳过网址,").build();
+        Message userMsg = Message.builder().role(Role.USER.getValue()).content(text).build();
+        msgManager.add(systemMsg);
+        msgManager.add(userMsg);
+        QwenParam param = QwenParam.builder().model("qwen-max-1201").messages(msgManager.get())
+                .apiKey("sk-ac7ea97ecadb4f6f9830a6b43cfeeb8a").resultFormat(QwenParam.ResultFormat.MESSAGE).build();
+        GenerationResult result = gen.call(param);
+        String content = result.getOutput().getChoices().get(0).getMessage().getContent();
+        System.out.println(content);
+        return content;
+//        return  "翻译===========>"+text;
 }
 
 }
