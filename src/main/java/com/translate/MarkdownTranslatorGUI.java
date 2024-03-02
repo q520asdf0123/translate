@@ -103,12 +103,20 @@ public class MarkdownTranslatorGUI extends JFrame {
     }
 
     private void renderMarkdown(WebView webView, String markdownContent) {
-        Platform.runLater(() -> webView.getEngine().executeScript("renderMarkdown(`" + escapeJavaScriptString(markdownContent) + "`);"));
+        Platform.runLater(() -> {
+            try {
+                webView.getEngine().executeScript("renderMarkdown(`" + escapeJavaScriptString(markdownContent) + "`);");
+            } catch (Exception e) {
+                // 在Swing线程中显示错误对话框
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null, "Markdown rendering failed.", "Error", JOptionPane.ERROR_MESSAGE));
+            }
+        });
     }
 
 
 
-   private boolean isTranslated = false;
+
+    private boolean isTranslated = false;
     private String translatedContent = "";
     @SneakyThrows
     private void translateMarkdown(ActionEvent e) {

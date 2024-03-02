@@ -1,5 +1,9 @@
 package com.translate;
 
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import com.alibaba.dashscope.aigc.generation.Generation;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.aigc.generation.models.QwenParam;
@@ -90,7 +94,7 @@ public class Markdown {
         } else {
             // Process non-code blocks and non-link/image nodes
             String lineWithPlaceholders = replaceUrlsWithPlaceholders(originalText, urls);
-            String translatedText = translate(lineWithPlaceholders);
+            String translatedText = translateLocal(lineWithPlaceholders);
             String lineWithUrls = restorePlaceholdersWithUrls(translatedText, urls);
             newMarkdown.append(originalText).append("\n\n").append(lineWithUrls).append("\n\n");
         }
@@ -139,5 +143,44 @@ public class Markdown {
         return content;
 //        return  "翻译===========>"+text;
 }
+
+        private String translateLocal(String text){
+            if (!StringUtils.hasText(text)) {
+                return "";
+            }
+
+            String url = "http://localhost:11434/api/chat";
+
+            // 创建消息数组
+            JSONArray messages = new JSONArray();
+            JSONObject message = new JSONObject();
+            message.set("role", "user");
+            message.set("content", "翻译下面内容，要求通俗易懂\n"+text);
+            messages.add(message);
+
+            // 创建请求体JSON对象
+            JSONObject requestBody = new JSONObject();
+            requestBody.set("model", "gemma:7b-instruct-fp16");
+            requestBody.set("messages", messages);
+            requestBody.set("stream",false);
+
+            // 发送POST请求
+            HttpResponse response = HttpRequest.post(url)
+                    .body(requestBody.toString())
+                    .execute();
+
+
+            if (response.isOk()) {
+                String responseBody = response.body();
+                JSONObject responseJson = new JSONObject(responseBody);
+                String context = responseJson.getJSONObject("message").getStr("content");
+                System.out.println(context);
+                return context;
+            } else {
+                System.out.println("Request failed with status code: " + response.getStatus());
+            }
+
+            throw new RuntimeException("翻译失败");
+        }
 
 }
