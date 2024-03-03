@@ -71,8 +71,6 @@ public class MarkdownTranslatorGUI extends JFrame {
         markdownPanel.setScene(new Scene(markdownView));
         markdownView.getEngine().getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == Worker.State.SUCCEEDED) {
-                // 现在页面已加载完成，可以安全执行JavaScript
-                System.out.println();
             }
         });
     }
@@ -83,11 +81,10 @@ public class MarkdownTranslatorGUI extends JFrame {
         translatedPanel.setScene(new Scene(translatedView));
         translatedView.getEngine().getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == Worker.State.SUCCEEDED) {
-                // 现在页面已加载完成，可以安全执行JavaScript
-                System.out.println();
             }
         });
     }
+
 
     private void openFile(ActionEvent e) {
         JFileChooser fileChooser = new JFileChooser();
@@ -114,10 +111,9 @@ public class MarkdownTranslatorGUI extends JFrame {
     }
 
 
-
-
     private boolean isTranslated = false;
-    private String translatedContent = "";
+    private volatile String translatedContent = "";
+
     @SneakyThrows
     private void translateMarkdown(ActionEvent e) {
         final JDialog dialog = new JDialog();
@@ -132,7 +128,7 @@ public class MarkdownTranslatorGUI extends JFrame {
         Thread thread = new Thread(() -> {
             try {
                 // 模拟长时间运行的任务
-                final String translatedContent = new Markdown().start(currentMarkdownContent);
+                translatedContent = new Markdown().start(currentMarkdownContent);
 
                 // 确保渲染和更新UI的代码在JavaFX线程中执行
                 Platform.runLater(() -> {
