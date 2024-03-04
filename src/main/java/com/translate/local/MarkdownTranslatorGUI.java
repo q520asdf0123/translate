@@ -35,16 +35,16 @@ public class MarkdownTranslatorGUI extends JFrame {
             createTranslatedView();
         });
 
-        openFileButton = new JButton("Open File");
+        openFileButton = new JButton("打开文件");
         openFileButton.addActionListener(this::openFile);
 
-        translateButton = new JButton("Translate");
+        translateButton = new JButton("开始翻译");
         translateButton.addActionListener(this::translateMarkdown);
 
-        saveButton = new JButton("Save Translated Markdown");
+        saveButton = new JButton("保存");
         saveButton.addActionListener(this::saveTranslatedMarkdown);
 
-        statusLabel = new JLabel("Status: Ready");
+        statusLabel = new JLabel("Status: 准备");
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, markdownPanel, translatedPanel);
         splitPane.setDividerLocation(400);
@@ -119,7 +119,7 @@ public class MarkdownTranslatorGUI extends JFrame {
         final JDialog dialog = new JDialog();
         dialog.setTitle("Please Wait...");
         dialog.setLayout(new BorderLayout());
-        dialog.add(new JLabel("Translating..."), BorderLayout.CENTER);
+        dialog.add(new JLabel("正在翻译中..."), BorderLayout.CENTER);
         dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
         dialog.setSize(200, 100);
         dialog.setLocationRelativeTo(this);
