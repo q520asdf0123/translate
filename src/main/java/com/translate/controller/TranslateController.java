@@ -28,7 +28,7 @@ public class TranslateController {
         Message userMsg = Message.builder().role(Role.USER.getValue()).content(text).build();
         msgManager.add(systemMsg);
         msgManager.add(userMsg);
-        QwenParam param = QwenParam.builder().model(Generation.Models.QWEN_TURBO).messages(msgManager.get())
+        QwenParam param = QwenParam.builder().model(Generation.Models.QWEN_PLUS).messages(msgManager.get())
                 .apiKey("sk-ac7ea97ecadb4f6f9830a6b43cfeeb8a").resultFormat(QwenParam.ResultFormat.MESSAGE).build();
         GenerationResult result = gen.call(param);
         String content = result.getOutput().getChoices().get(0).getMessage().getContent();
