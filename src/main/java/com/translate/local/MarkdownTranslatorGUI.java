@@ -1,4 +1,4 @@
-package com.translate;
+package com.translate.local;
 
 import javafx.application.Platform;
 import javafx.concurrent.Worker;

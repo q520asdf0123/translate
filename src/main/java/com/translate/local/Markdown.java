@@ -1,4 +1,4 @@
-package com.translate;
+package com.translate.local;
 
 import com.alibaba.dashscope.aigc.generation.Generation;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
